@@ -194,6 +194,31 @@ class PlotUyDark(Emva1288Plot):
         ax.ticklabel_format(axis='x', style='sci', scilimits=(1, 4))
         self.set_legend(ax)
 
+class PlotDC(Emva1288Plot):
+    '''Create $\mu_{y.dark}$ plot'''
+
+    name = 'DC'
+    title = '$\mu_{y.dark}$'
+    xlabel = 'exposure time [ns]'
+    ylabel = '$\mu_{y.dark}$ [DN]'
+
+    def plot(self, test):
+        ax = self.ax
+
+        # if np.mean(test.dc['texp']) == test.dc['texp'][0]:
+        #     ax.plot(test.dc['texp'],
+        #             test.dc['u_ydark'],
+        #             'o',
+        #             markersize=5,
+        #             label='Data',
+        #             gid='%d:data' % test.id)
+        # else:
+        #     ax.plot(test.dc['texp'],
+        #             test.dc['u_ydark'],
+        #             label='Data',
+        #             gid='%d:data' % test.id)
+        ax.ticklabel_format(axis='x', style='sci', scilimits=(1, 4))
+        self.set_legend(ax)
 
 class PlotPTC(Emva1288Plot):
     '''Create Photon Transfer plot'''
@@ -806,7 +831,8 @@ EVMA1288plots = [PlotPTC,
                  PlotAccumulatedLogHistogramDSNU,
                  PlotAccumulatedLogHistogramPRNU,
                  PlotHorizontalProfile,
-                 PlotVerticalProfile]
+                 PlotVerticalProfile,
+                 PlotDC]
 """
     This list is quite exhaustive. There are the links
     to corresponding documentation:

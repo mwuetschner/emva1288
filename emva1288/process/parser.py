@@ -49,7 +49,8 @@ class ParseEmvaDescriptorFile(object):
         self.format = {}  # bits, witdth, height
         self.version = None
         self.images = {'temporal': {},
-                       'spatial': {}}
+                       'spatial': {},
+                       'darkcurrent': {}}
 
         logging.basicConfig()
         self.log = logging.getLogger('Parser')
@@ -103,14 +104,15 @@ class ParseEmvaDescriptorFile(object):
 
         return kind
 
-    def _add_pcount(self, exposure, photons, fnames):
-        """Add images to a given exposure/phton
+    def _add_pcount(self, exposure, photons, fnames, kind=None):
+        """Add images to a given exposure/photon
 
         For a given exposure and photon count
         add the appropiate image filenames to the self.images dict
         """
         # is it temporal or spatial data
-        kind = self._get_kind(fnames)
+        if kind is None:
+            kind = self._get_kind(fnames)
         # create the exposure time dictionary for this exposure time
         # if it is not already existing
         self.images[kind].setdefault(exposure, {})
@@ -186,6 +188,22 @@ class ParseEmvaDescriptorFile(object):
                 # Add the images path to the images[kind][exposure][photons]
                 # dictionary where kind = temporal or spatial
                 self._add_pcount(exposure, photons, fnames)
+
+                continue
+                
+            if l[0] == 'dc':
+                # For lines that starts with d, there is always 2 elements
+                # d + exposureTime (dark images)
+                if len(l) != 2:  # pragma: no cover
+                    raise SyntaxError('Wrong format: "%s" should be "d '
+                                      'exposure"' % line)
+
+                # replace floating point representation if wring format
+                exposure = np.float(l[1].replace(',', '.'))
+                # For this exposure, get all the corresponding images
+                fnames = self._get_images_filenames()
+                # Add the images path to the images dict.
+                self._add_pcount(exposure, np.float(0.0), fnames, 'darkcurrent')
 
                 continue
 

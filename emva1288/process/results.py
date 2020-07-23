@@ -56,6 +56,7 @@ class Results1288(object):
 
         self.temporal = data['temporal']
         self.spatial = data['spatial']
+        self.dc = data['darkcurrent']
 
         self.pixel_area = pixel_area
         self._s2q = 1.0 / 12.0
@@ -108,7 +109,8 @@ class Results1288(object):
                 max_ = s2_y[i]
                 max_i = i
             elif (s2_y[i] < max_) and \
-                 (s2_y[abs(i - 1)] < max_):
+                 (s2_y[abs(i - 1)] < max_) and \
+                 (max_ > 10.0):  # Only if variance is significant
                 break
 
         self._index_u_ysat = max_i
@@ -633,8 +635,6 @@ class Results1288(object):
         fit, _error = routines.LinearB(self.temporal['texp'],
                                        self.temporal['s2_ydark'])
 
-        if fit[0] < 0:
-            return np.nan
         # Multiply by 10^9 because exposure times are in nanoseconds
         return fit[0] / self.K * 1e9
 
@@ -697,6 +697,93 @@ class Results1288(object):
             :Unit: $e^-/s$
         """
         ui = self.u_I_mean_DN
+        if ui is np.nan:
+            return np.nan
+        return ui / self.K
+
+    @property
+    def u_I_var_DNDC(self):
+        """Dark Current from variance DC.
+
+        The dark current from variance (in DN/s) is the slope of the dark
+        signal variance as a function of the exposure time divided by the
+        system gain. Returns NaN if the slope is negative.
+
+        .. emva1288::
+            :Section: dark_current
+            :Short: Dark Current from variance DC
+            :Symbol: $\mu_{I.var.DNDC}$
+            :Unit: $DN/s$
+            :LatexName: UIVarDC
+        """
+        if len(np.unique(self.dc['texp'])) <= 2:
+            return np.nan
+
+        fit, _error = routines.LinearB(self.dc['texp'],
+                                       self.dc['s2_ydark'])
+
+        # Multiply by 10^9 because exposure times are in nanoseconds
+        return fit[0] / self.K * 1e9
+
+    @property
+    def u_I_varDC(self):
+        """Dark Current from variance DC.
+
+        The dark current from variance (in e-/s) is the dark current from
+        variance (in DN/s) divided by the system gain.
+        Returns NaN if the fit slope is negative.
+
+        .. emva1288::
+            :Section: dark_current
+            :Short: Dark Current from variance DC
+            :Symbol: $\mu_{I.varDC}$
+            :Unit: $e^-/s$
+            :LatexName: UIVarDC
+        """
+        ui = self.u_I_var_DNDC
+        if ui is np.nan:
+            return np.nan
+
+        return ui / self.K
+
+    @property
+    def u_I_mean_DNDC(self):
+        """Dark Current from mean DC.
+
+        The dark current from mean is the slope of the dark signal mean in
+        function of the exposure time.
+        Returns NaN if the number of different exposure times is less than 3.
+
+        .. emva1288::
+            :Section: dark_current
+            :Short: Dark Current from mean DC
+            :Symbol: $\mu_{I.mean.DNDC}$
+            :Unit: $DN/s$
+        """
+
+        if len(np.unique(self.dc['texp'])) <= 2:
+            return np.nan
+
+        fit, _error = routines.LinearB(self.dc['texp'],
+                                       self.dc['u_ydark'])
+        # Multiply by 10 ^ 9 because exposure time in nanoseconds
+        return fit[0] * (10 ** 9)
+
+    @property
+    def u_I_meanDC(self):
+        """Dark Current from mean DC.
+
+        The dark current from mean is the slope of the dark signal mean in
+        function of the exposure times divided by the overall system gain.
+        Returns NaN if the number of different exposure times is less than 3.
+
+        .. emva1288::
+            :Section: dark_current
+            :Short: Dark Current from mean DC
+            :Symbol: $\mu_{I.meanDC}$
+            :Unit: $e^-/s$
+        """
+        ui = self.u_I_mean_DNDC
         if ui is np.nan:
             return np.nan
         return ui / self.K

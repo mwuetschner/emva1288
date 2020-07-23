@@ -52,6 +52,7 @@ class Data1288(object):
         self.data = {}
         self.data['temporal'] = self._get_temporal(data['temporal'])
         self.data['spatial'] = self._get_spatial(data['spatial'])
+        self.data['darkcurrent'] = self._get_temporal_dc(data['darkcurrent'])
 
     def _get_temporal(self, data):
         """Fill the temporal dict, with the stuff that we need.
@@ -140,6 +141,81 @@ class Data1288(object):
         # we just repeat the same value over and over
         if len(exposures) == 1:
             l = len(temporal['u_p'])
+
+            v = temporal['texp'][0]
+            temporal['texp'] = np.asarray([v for _i in range(l)])
+
+            v = temporal['u_ydark'][0]
+            temporal['u_ydark'] = np.asarray([v for _i in range(l)])
+
+            v = temporal['s2_ydark'][0]
+            temporal['s2_ydark'] = np.asarray([v for _i in range(l)])
+
+        return temporal
+
+    def _get_temporal_dc(self, data):
+        """Fill the dict for dark current, with the stuff that we need.
+        Compute the averages and variances from the sums (sum and pvar)
+
+        If there is only one exposure time,
+        the arrays in the returned dict will all have the same length as the
+        photon count array. For this case, the exposure times and the dark
+        value data array elements will all be the same.
+
+        Parameters
+        ----------
+        data : The data dictionary containing the temporal data sets.
+
+        Returns
+        -------
+        dict : A dict containing all temporal test data.
+               The keys are the following:
+               *'texp'*: the array of the
+               exposure times used for the test,
+               *'u_ydark'*: the array of the mean digital dark value
+               for each exposure time
+               and *'s2_ydark'*: the
+               array of the digital dark value variance for each exposure time.
+
+        Raises
+        ------
+        ValueError
+            If there is no one 0.0 photon count entry for each exposure time
+            and at least one bright point
+        """
+        temporal = {}
+
+        # List of exposure times
+        exposures = np.asarray(sorted(data.keys()))
+
+        # texp is now an array of exposure times
+        temporal['texp'] = exposures
+
+        u_ydark = []
+        s2_ydark = []
+
+        for t in exposures:
+            # photons is a list of photon counts
+            # images for each exposure time
+            photons = sorted(data[t].keys())
+
+            if 0.0 not in photons:
+                raise ValueError('Every exposure point must have a 0.0 photon')
+
+            # get data for dark image
+            d = self._get_temporal_data(data[t][0.0])
+            u_ydark.append(d['mean'])
+            s2_ydark.append(d['var'])
+
+        # Append all data to temporal dict
+        temporal['u_ydark'] = np.asarray(u_ydark)
+        temporal['s2_ydark'] = np.asarray(s2_ydark)
+
+        # In case we have only one exposure, we need arrays with the
+        # same length as the up
+        # we just repeat the same value over and over
+        if len(exposures) == 1:
+            l = len(temporal['u_ydark'])
 
             v = temporal['texp'][0]
             temporal['texp'] = np.asarray([v for _i in range(l)])
