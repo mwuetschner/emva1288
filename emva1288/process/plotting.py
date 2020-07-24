@@ -194,29 +194,31 @@ class PlotUyDark(Emva1288Plot):
         ax.ticklabel_format(axis='x', style='sci', scilimits=(1, 4))
         self.set_legend(ax)
 
-class PlotDC(Emva1288Plot):
-    '''Create $\mu_{y.dark}$ plot'''
+class PlotUyDarkDC(Emva1288Plot):
+    '''Create $\mu_{y.darkDC}$ plot'''
 
-    name = 'DC'
-    title = '$\mu_{y.dark}$'
+    name = 'Mean gray value in dark DC'
+    title = '$\mu_{y.darkDC}$'
     xlabel = 'exposure time [ns]'
-    ylabel = '$\mu_{y.dark}$ [DN]'
+    ylabel = '$\mu_{y.darkDC}$ [DN]'
 
     def plot(self, test):
+        if len(test.dc['u_ydark']) == 0:
+            return
         ax = self.ax
 
-        # if np.mean(test.dc['texp']) == test.dc['texp'][0]:
-        #     ax.plot(test.dc['texp'],
-        #             test.dc['u_ydark'],
-        #             'o',
-        #             markersize=5,
-        #             label='Data',
-        #             gid='%d:data' % test.id)
-        # else:
-        #     ax.plot(test.dc['texp'],
-        #             test.dc['u_ydark'],
-        #             label='Data',
-        #             gid='%d:data' % test.id)
+        if np.mean(test.dc['texp']) == test.dc['texp'][0]:
+            ax.plot(test.dc['texp'],
+                    test.dc['u_ydark'],
+                    'o',
+                    markersize=5,
+                    label='Data',
+                    gid='%d:data' % test.id)
+        else:
+            ax.plot(test.dc['texp'],
+                    test.dc['u_ydark'],
+                    label='Data',
+                    gid='%d:data' % test.id)
         ax.ticklabel_format(axis='x', style='sci', scilimits=(1, 4))
         self.set_legend(ax)
 
@@ -832,7 +834,7 @@ EVMA1288plots = [PlotPTC,
                  PlotAccumulatedLogHistogramPRNU,
                  PlotHorizontalProfile,
                  PlotVerticalProfile,
-                 PlotDC]
+                 PlotUyDarkDC]
 """
     This list is quite exhaustive. There are the links
     to corresponding documentation:
